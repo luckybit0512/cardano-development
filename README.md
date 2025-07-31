@@ -36,9 +36,6 @@ To integrate AFNetworking into your Xcode project using CocoaPods, specify it in
 pod 'AFNetworking', '~> 4.0'
 ```
 
-### Installation with Swift Package Manager
-
-Once you have your Swift package set up, adding AFNetworking as a dependency is as easy as adding it to the `dependencies` value of your `Package.swift`.
 
 ```swift
 dependencies: [
