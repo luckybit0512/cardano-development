@@ -26,38 +26,64 @@
 #import "Post.h"
 #import "User.h"
 
+@interface AppDelegate ()
+
+@property (weak) IBOutlet NSWindow *window;
+
+@end
+
 @implementation AppDelegate
 
 - (void)applicationDidFinishLaunching:(NSNotification *)notification {
-    NSURLCache *URLCache = [[NSURLCache alloc] initWithMemoryCapacity:4 * 1024 * 1024 diskCapacity:20 * 1024 * 1024 diskPath:nil];
-    [NSURLCache setSharedURLCache:URLCache];
-    
+    [self setupURLCache];
     [self.window makeKeyAndOrderFront:self];
-    
+    [self loadTimelinePosts];
+    [self setupNotificationObserver];
+}
+
+// MARK: - Private Methods
+
+- (void)setupURLCache {
+    NSURLCache *cache = [[NSURLCache alloc] initWithMemoryCapacity:4 * 1024 * 1024
+                                                      diskCapacity:20 * 1024 * 1024
+                                                          diskPath:nil];
+    [NSURLCache setSharedURLCache:cache];
+}
+
+- (void)loadTimelinePosts {
     [Post globalTimelinePostsWithBlock:^(NSArray *posts, NSError *error) {
         if (error) {
-            NSAlert *alert = [[NSAlert alloc] init];
-            alert.messageText = NSLocalizedString(@"Error", nil);
-            alert.informativeText = error.localizedDescription;
-            [alert addButtonWithTitle:NSLocalizedString(@"OK", nil)];
-            [alert runModal];
+            [self presentErrorAlert:error];
+            return;
         }
-        
         self.postsArrayController.content = posts;
     }];
-    
-    __weak __typeof(self)weakSelf = self;
-    [[NSNotificationCenter defaultCenter] addObserverForName:kUserProfileImageDidLoadNotification object:nil queue:[NSOperationQueue mainQueue] usingBlock:^(NSNotification *notification) {
-        __strong __typeof(weakSelf)strongSelf = weakSelf;
+}
+
+- (void)presentErrorAlert:(NSError *)error {
+    NSAlert *alert = [[NSAlert alloc] init];
+    alert.messageText = NSLocalizedString(@"Error", nil);
+    alert.informativeText = error.localizedDescription;
+    [alert addButtonWithTitle:NSLocalizedString(@"OK", nil)];
+    [alert runModal];
+}
+
+- (void)setupNotificationObserver {
+    __weak typeof(self) weakSelf = self;
+    [[NSNotificationCenter defaultCenter] addObserverForName:kUserProfileImageDidLoadNotification
+                                                      object:nil
+                                                       queue:[NSOperationQueue mainQueue]
+                                                  usingBlock:^(NSNotification *notification) {
+        __strong typeof(weakSelf) strongSelf = weakSelf;
         [strongSelf.tableView reloadData];
     }];
 }
 
+// MARK: - NSApplicationDelegate
+
 - (BOOL)applicationShouldHandleReopen:(NSApplication *)application
-                    hasVisibleWindows:(BOOL)flag
-{
+                    hasVisibleWindows:(BOOL)flag {
     [self.window makeKeyAndOrderFront:self];
-    
     return YES;
 }
 
